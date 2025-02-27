@@ -1,9 +1,9 @@
 <?php
 session_start();
-$host = "localhost"; // Change this if your DB is hosted elsewhere
+$host = "localhost";
 $dbname = "users";
-$username = "root"; // Your MySQL username
-$password = ""; // Your MySQL password
+$username = "root";
+$password = "";
 
 $conn = new mysqli($host, $username, $password, $dbname);
 
@@ -55,6 +55,8 @@ $conn->close();
         .box { border: 2px solid black; padding: 20px; display: inline-block; border-radius: 10px; }
         input { display: block; margin: 10px auto; padding: 8px; width: 200px; }
         button { padding: 8px 20px; border: none; background-color: black; color: white; cursor: pointer; }
+        .links { margin-top: 15px; }
+        .links a { display: block; color: blue; text-decoration: none; margin: 5px 0;}
     </style>
 </head>
 <body>
@@ -72,6 +74,10 @@ $conn->close();
         <?php if (isset($error)) echo "<p style='color: red;'>$error</p>"; ?>
     </div>
 </div>
-
+<div class="links">
+    <a href="register.php">Don't have an account? Register here</a>
+    <a href="hello_db.php">Team Members</a>
+    <a href="UseCase.pdf">Use Case</a>
+</div>
 </body>
 </html>
