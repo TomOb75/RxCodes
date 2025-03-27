@@ -10,34 +10,34 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     header("Location: login.php");
     exit();
 }
 
 $userID = $_SESSION['user_id'];
-$tableName = "user_" . $userID; // Patient's personal table
+$tableName = "user_" . $userID;
 
-// Fetch patient details (prescriptions, allergies)
-$query = $conn->prepare("SELECT drugs, allergies FROM `$tableName` LIMIT 1");
-$query->execute();
-$result = $query->get_result();
-$patientData = $result->fetch_assoc();
-
-// Handle allergy updates
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_allergies'])) {
-    $newAllergies = $_POST['allergies'];
-    $updateQuery = $conn->prepare("UPDATE `$tableName` SET allergies = ? LIMIT 1");
-    $updateQuery->bind_param("s", $newAllergies);
-    if ($updateQuery->execute()) {
-        $patientData['allergies'] = $newAllergies;
-        $successMessage = "Allergies updated successfully!";
-    } else {
-        $errorMessage = "Error updating allergies.";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_allergy'])) {
+    $newAllergy = trim($_POST['new_allergy']);
+    if (!empty($newAllergy)) {
+        $getAllergy = $conn->prepare("SELECT allergies FROM `$tableName` LIMIT 1");
+        $getAllergy->execute();
+        $result = $getAllergy->get_result();
+        $data = $result->fetch_assoc();
+        $existing = $data['allergies'] ?? '';
+        $updated = $existing ? $existing . ', ' . $newAllergy : $newAllergy;
+        $update = $conn->prepare("UPDATE `$tableName` SET allergies = ?");
+        $update->bind_param("s", $updated);
+        $update->execute();
     }
 }
 
+$query = $conn->query("SELECT first_name, drugs, allergies FROM `$tableName` LIMIT 1");
+$userData = $query->fetch_assoc();
+$firstName = $userData['first_name'] ?? 'Patient';
+$drugs = $userData['drugs'] ?? 'None';
+$allergies = $userData['allergies'] ?? 'None';
 ?>
 
 <!DOCTYPE html>
@@ -46,63 +46,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_allergies'])) {
     <meta charset="UTF-8">
     <title>Patient Dashboard</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            text-align: center;
-        }
-        .container h2 {
-            margin-bottom: 20px;
-        }
-        input, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .success {
-            color: green;
-        }
-        .error {
-            color: red;
-        }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; }
+        h2 { margin-bottom: 0; }
+        p, label { margin: 8px 0; }
+        input[type="text"] { width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { margin-top: 10px; padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>Welcome, Patient</h2>
+    <h2>Welcome, <?php echo htmlspecialchars($firstName); ?></h2>
+    <p>User ID: <?php echo htmlspecialchars($userID); ?></p>
 
-    <?php if (isset($successMessage)) echo "<p class='success'>$successMessage</p>"; ?>
-    <?php if (isset($errorMessage)) echo "<p class='error'>$errorMessage</p>"; ?>
-
-    <h3>Your Prescriptions</h3>
-    <p><?php echo isset($patientData['drugs']) ? $patientData['drugs'] : "No prescriptions found."; ?></p>
+    <h3>Prescriptions</h3>
+    <p><?php echo htmlspecialchars($drugs); ?></p>
 
     <h3>Allergies</h3>
+    <p><?php echo htmlspecialchars($allergies); ?></p>
+
     <form method="POST">
-        <textarea name="allergies" placeholder="Enter allergies..."><?php echo isset($patientData['allergies']) ? $patientData['allergies'] : ""; ?></textarea>
-        <button type="submit" name="update_allergies">Update Allergies</button>
+        <label for="new_allergy">Add New Allergy:</label>
+        <input type="text" name="new_allergy" id="new_allergy" placeholder="Enter allergy..." required>
+        <button type="submit">Add Allergy</button>
     </form>
 
     <p><a href="logout.php">Logout</a></p>

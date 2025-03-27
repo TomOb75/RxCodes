@@ -76,6 +76,7 @@ $conn->close();
 </div>
 <div class="links">
     <a href="register.php">Don't have an account? Register here</a>
+    <a href="doctor.php">Are you a Doctor? Send an E-Script here</a>
     <a href="hello_db.php">Team Members</a>
     <a href="UseCase.pdf">Use Case</a>
 </div>
